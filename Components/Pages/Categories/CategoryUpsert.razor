@@ -1,0 +1,94 @@
+﻿@page "/categories/create"
+@page "/categories/update/{id:int}"
+@inject ICategoryRepository categoryRepository
+@inject NavigationManager navigationManager
+@inject IJSRuntime JS;
+
+
+@if (IsProcessing)
+{
+    <div class="position-absolute w-75 h-75 d-flex flex-column align-items-center bg-white justify-content-center">
+        <img src="/images/loading.gif" alt="loading">
+    </div>
+
+}
+else
+{
+    <div class="card shadow border mt-4">
+        <div class="card-header bg-black bg-gradient ml-0 py-3">
+            <div class="row">
+                <div class="col12 text-center">
+                    <div class="text-white py-2">@(Id > 0 ? "Update" : "Create") Category</div>
+                </div>
+            </div>
+        </div>
+        <EditForm Model="Category" FormName="CategoryUpsertForm" OnValidSubmit="UpsertCategory">
+            <DataAnnotationsValidator />
+            <div class="border p-3 mt-4">
+                <div class="form-floating py-3 col-12">
+                    <InputText @bind-Value="Category.Name" class="form-control" id="Name" placeholder="Name" />
+                    <label for="Name">Name</label>
+                    <ValidationMessage For="@(() => Category.Name)" />
+                </div>
+                <div class="row mt-3">
+                    <div class="col-6 col-md-3">
+                        <button type="submit" class="btn btn-primary form-control" disabled="@IsProcessing">
+                            <i class="bi bi-save"></i> @(Id > 0 ? "Update" : "Create")
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <a href="categories" class="btn btn-danger form-control" disabled="@IsProcessing">
+                            <i class="bi bi-arrow-bar-left"></i> Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+}
+
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    [SupplyParameterFromForm]
+    private Category Category { get; set; } = new Category();
+
+    private bool IsProcessing { get; set; } = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadCategory();
+            IsProcessing = false;
+            StateHasChanged();
+        }
+        // return base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task LoadCategory()
+    {
+        if (Id > 0)
+            Category = await categoryRepository.GetByIdAsync(Id);
+    }
+
+    private async Task UpsertCategory()
+    {
+        IsProcessing = true;
+        if (Category.Id == 0)
+        {
+            await categoryRepository.CreateAsync(Category);
+            await JS.ToastrSuccess("Category Created Successfully");
+        }
+        else
+        {
+            await categoryRepository.UpdateAsync(Category);
+            await JS.ToastrSuccess("Category Updated Successfully");
+        }
+        IsProcessing = false;
+        navigationManager.NavigateTo("categories");
+    }
+
+}
