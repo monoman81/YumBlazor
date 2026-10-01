@@ -35,5 +35,7 @@ namespace YumBlazor.Services.Extensions
             await jsRuntime.InvokeVoidAsync("showSweetAlert", "warning", message);
         }
 
+
+
     }
 }
